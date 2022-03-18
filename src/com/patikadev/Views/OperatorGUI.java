@@ -6,7 +6,11 @@ import com.patikadev.Models.Operator;
 import com.patikadev.Models.User;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class OperatorGUI extends JFrame {
 
@@ -16,8 +20,16 @@ public class OperatorGUI extends JFrame {
     private JButton btnSignOut;
     private JScrollPane scrlUsers;
     private JTable tblUsers;
+    private JPanel pnlUserForm;
+    private JTextField txtName;
+    private JTextField txtUsername;
+    private JTextField txtPassword;
+    private JComboBox cmbUserType;
+    private JButton btnAddUser;
+    private JTextField txtUserId;
+    private JButton btnDelete;
     private DefaultTableModel tblUsersModel;
-    private Object[] rowUsers;
+    private DefaultComboBoxModel cmbUserTypeModel;
 
     private final Operator operator;
 
@@ -33,25 +45,60 @@ public class OperatorGUI extends JFrame {
 
         lblWelcome.setText(Configs.WELCOME_TEXT + this.operator.getName());
 
-        // ModelUsers
-        tblUsersModel = new DefaultTableModel();
-        Object[] colUsers = {"ID", "İsim", "Kullanıcı adı", "Şifre", "Kullanıcı Tipi"};
-        tblUsersModel.setColumnIdentifiers(colUsers);
+        // ModelUserType
+        cmbUserTypeModel = new DefaultComboBoxModel();
+        Object[] rowUserType = {"operator", "educator", "student"};
 
-        Object[] row;
-        for (User user : User.getUsers()) {
-            row = new Object[colUsers.length];
+        for (Object obj : rowUserType)
+            cmbUserTypeModel.addElement(obj);
 
-            row[0] = user.getId();
-            row[1] = user.getName();
-            row[2] = user.getUsername();
-            row[3] = user.getPassword();
-            row[4] = user.getType();
+        cmbUserType.setModel(cmbUserTypeModel);
 
-            tblUsersModel.addRow(row);
-        }
+        Functions.getUsers(tblUsers);
 
-        tblUsers.setModel(tblUsersModel);
-        tblUsers.getTableHeader().setReorderingAllowed(false);
+        tblUsers.getSelectionModel().addListSelectionListener(e -> {
+            try {
+                txtUserId.setText(tblUsers.getValueAt(tblUsers.getSelectedRow(), 0).toString());
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            }
+        });
+
+        btnAddUser.addActionListener(e -> {
+            if (Functions.isFieldEmpty(txtName) || Functions.isFieldEmpty(txtUsername) || Functions.isFieldEmpty(txtPassword)) {
+                Functions.showMessage("fill", "err", JOptionPane.ERROR_MESSAGE);
+            } else {
+                User user = new User();
+                user.setName(txtName.getText());
+                user.setUsername(txtUsername.getText());
+                user.setPassword(txtPassword.getText());
+                user.setType(cmbUserType.getSelectedItem().toString());
+
+                if (User.add(user)) {
+                    txtName.setText(null);
+                    txtUsername.setText(null);
+                    txtPassword.setText(null);
+                }
+
+                Functions.getUsers(tblUsers);
+            }
+        });
+
+        btnDelete.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (Functions.isFieldEmpty(txtUserId))
+                    Functions.showMessage("fill", "err", JOptionPane.ERROR_MESSAGE);
+                else {
+                    if (User.delete(Integer.parseInt(txtUserId.getText()))) {
+                        Functions.showMessage("success", "info", JOptionPane.INFORMATION_MESSAGE);
+                        txtUserId.setText(null);
+                    } else
+                        Functions.showMessage("err", "err", JOptionPane.ERROR_MESSAGE);
+
+                    Functions.getUsers(tblUsers);
+                }
+            }
+        });
     }
 }
