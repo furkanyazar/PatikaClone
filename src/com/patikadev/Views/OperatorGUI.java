@@ -3,13 +3,16 @@ package com.patikadev.Views;
 import com.patikadev.Helpers.Configs;
 import com.patikadev.Helpers.Functions;
 import com.patikadev.Models.Operator;
+import com.patikadev.Models.Path;
 import com.patikadev.Models.User;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
-import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class OperatorGUI extends JFrame {
@@ -32,9 +35,12 @@ public class OperatorGUI extends JFrame {
     private JTextField txtUsernameForSearch;
     private JComboBox cmbUserTypeForSearch;
     private JButton btnSearch;
-    private DefaultTableModel tblUsersModel;
+    private JTable tblPaths;
+    private JTextField txtPathName;
+    private JButton btnAddPath;
     private DefaultComboBoxModel cmbUserTypeModel;
     private DefaultComboBoxModel cmbUserTypeForSearchModel;
+    private JPopupMenu pathsMenu;
 
     private final Operator operator;
 
@@ -69,6 +75,43 @@ public class OperatorGUI extends JFrame {
         cmbUserTypeForSearch.setModel(cmbUserTypeForSearchModel);
 
         Functions.getUsers(tblUsers);
+        Functions.getPaths(tblPaths);
+
+        pathsMenu = new JPopupMenu();
+        JMenuItem updateMenu = new JCheckBoxMenuItem("Düzenle");
+        JMenuItem deleteMenu = new JCheckBoxMenuItem("Sil");
+        pathsMenu.add(updateMenu);
+        pathsMenu.add(deleteMenu);
+        tblPaths.setComponentPopupMenu(pathsMenu);
+
+        updateMenu.addActionListener(e -> {
+            Path path = new Path();
+            path.setId(Integer.parseInt(tblPaths.getValueAt(tblPaths.getSelectedRow(), 0).toString()));
+            path.setName(tblPaths.getValueAt(tblPaths.getSelectedRow(), 1).toString());
+            UpdatePathGUI updatePathGUI = new UpdatePathGUI(path, tblPaths);
+        });
+
+        deleteMenu.addActionListener(e -> {
+            if (Functions.confirm()) {
+                int selectedId = Integer.parseInt(tblPaths.getValueAt(tblPaths.getSelectedRow(), 0).toString());
+
+                if (Path.delete(selectedId))
+                    Functions.showMessage("success", "info", JOptionPane.INFORMATION_MESSAGE);
+                else
+                    Functions.showMessage("err", "err", JOptionPane.ERROR_MESSAGE);
+
+                Functions.getPaths(tblPaths);
+            }
+        });
+
+        tblPaths.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                Point point = e.getPoint();
+                int selectedRow = tblPaths.rowAtPoint(point);
+                tblPaths.setRowSelectionInterval(selectedRow, selectedRow);
+            }
+        });
 
         tblUsers.getSelectionModel().addListSelectionListener(e -> {
             try {
@@ -115,12 +158,11 @@ public class OperatorGUI extends JFrame {
             }
         });
 
-        btnDelete.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (Functions.isFieldEmpty(txtUserId))
-                    Functions.showMessage("fill", "err", JOptionPane.ERROR_MESSAGE);
-                else {
+        btnDelete.addActionListener(e -> {
+            if (Functions.isFieldEmpty(txtUserId))
+                Functions.showMessage("fill", "err", JOptionPane.ERROR_MESSAGE);
+            else {
+                if (Functions.confirm()) {
                     if (User.delete(Integer.parseInt(txtUserId.getText()))) {
                         Functions.showMessage("success", "info", JOptionPane.INFORMATION_MESSAGE);
                         txtUserId.setText(null);
@@ -131,6 +173,7 @@ public class OperatorGUI extends JFrame {
                 }
             }
         });
+
         btnSearch.addActionListener(e -> {
             String name = txtNameForSearch.getText();
             String username = txtUsernameForSearch.getText();
@@ -142,6 +185,23 @@ public class OperatorGUI extends JFrame {
 
         btnSignOut.addActionListener(e -> {
             dispose();
+        });
+
+        btnAddPath.addActionListener(e -> {
+            Path path;
+
+            if (Functions.isFieldEmpty(txtPathName))
+                Functions.showMessage("fill", "err", JOptionPane.ERROR_MESSAGE);
+            else {
+                path = new Path();
+                path.setName(txtPathName.getText());
+
+                if (Path.add(path)) {
+                    txtPathName.setText(null);
+                }
+
+                Functions.getPaths(tblPaths);
+            }
         });
     }
 }
