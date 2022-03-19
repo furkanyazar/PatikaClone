@@ -95,10 +95,33 @@ public class Path {
         return path;
     }
 
+    public static Path get(int id) {
+        Path path = null;
+
+        try {
+            Statement statement = DbConnector.getInstance().createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM paths WHERE id = " + id);
+
+            if (resultSet.next()) {
+                path = new Path();
+                path.setId(resultSet.getInt("id"));
+                path.setName(resultSet.getString("name"));
+            }
+
+            statement.close();
+            resultSet.close();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return path;
+    }
+
     public static boolean delete(int id) {
         try {
             Statement statement = DbConnector.getInstance().createStatement();
             statement.executeUpdate("DELETE FROM paths WHERE id = " + id);
+            statement.executeUpdate("DELETE FROM courses WHERE path_id = " + id);
             return true;
         } catch (SQLException e) {
             return false;
@@ -128,40 +151,6 @@ public class Path {
 
             return false;
         }
-    }
-
-    public static List<Path> search(String query) {
-        List<Path> paths = new ArrayList<>();
-        Path path;
-
-        try {
-            Statement statement = DbConnector.getInstance().createStatement();
-            ResultSet resultSet = statement.executeQuery(query);
-
-            while (resultSet.next()) {
-                path = new Path();
-                path.setId(resultSet.getInt("id"));
-                path.setName(resultSet.getString("name"));
-
-                paths.add(path);
-            }
-
-            statement.close();
-            resultSet.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return paths;
-    }
-
-    public static String searchQuery(String name) {
-        name = name.toLowerCase();
-
-        String query = "SELECT * FROM paths WHERE LOWER(name) LIKE '%{{name}}%'";
-        query = query.replace("{{name}}", name);
-
-        return query;
     }
 
     public int getId() {

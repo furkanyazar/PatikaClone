@@ -1,5 +1,6 @@
 package com.patikadev.Helpers;
 
+import com.patikadev.Models.Course;
 import com.patikadev.Models.Path;
 import com.patikadev.Models.User;
 
@@ -83,7 +84,15 @@ public class Functions {
     }
 
     public static void getPaths(JTable tblPaths) {
-        DefaultTableModel tblPathsModel = new DefaultTableModel();
+        DefaultTableModel tblPathsModel = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                if (column == 0)
+                    return false;
+
+                return super.isCellEditable(row, column);
+            }
+        };
 
         Object[] colPaths = {"ID", "Patika Adı"};
         tblPathsModel.setColumnIdentifiers(colPaths);
@@ -101,6 +110,54 @@ public class Functions {
         tblPaths.getTableHeader().setReorderingAllowed(false);
         tblPaths.getColumnModel().getColumn(0).setMaxWidth(100);
         tblPaths.getColumnModel().getColumn(0).setMinWidth(50);
+    }
+
+    public static void getCourses(JTable tblCourses) {
+        DefaultTableModel tblCoursesModel = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                if (column == 0)
+                    return false;
+
+                return super.isCellEditable(row, column);
+            }
+        };
+
+        Object[] colCourses = {"ID", "Eğitmen", "Patika", "Kurs Adı", "Dil"};
+        tblCoursesModel.setColumnIdentifiers(colCourses);
+
+        for (Course course : Course.getAll()) {
+            Object[] rowCourses = new Object[colCourses.length];
+
+            rowCourses[0] = course.getId();
+            rowCourses[1] = course.getUser().getName();
+            rowCourses[2] = course.getPath().getName();
+            rowCourses[3] = course.getName();
+            rowCourses[4] = course.getLanguage();
+
+            tblCoursesModel.addRow(rowCourses);
+        }
+
+        tblCourses.setModel(tblCoursesModel);
+        tblCourses.getTableHeader().setReorderingAllowed(false);
+        tblCourses.getColumnModel().getColumn(0).setMaxWidth(100);
+        tblCourses.getColumnModel().getColumn(0).setMinWidth(50);
+    }
+
+    public static void getPathsForAddCourse(JComboBox cmbPaths) {
+        cmbPaths.removeAllItems();
+
+        List<Path> paths = Path.getAll();
+        for (Path path : paths)
+            cmbPaths.addItem(new Item(path.getId(), path.getName()));
+    }
+
+    public static void getUsersForAddCourse(JComboBox cmbTeachers) {
+        cmbTeachers.removeAllItems();
+
+        List<User> users = User.getAll("educator");
+        for (User user : users)
+            cmbTeachers.addItem(new Item(user.getId(), user.getName()));
     }
 
     public static void getUsers(JTable tblUsers) {
@@ -131,6 +188,8 @@ public class Functions {
 
         tblUsers.setModel(tblUsersModel);
         tblUsers.getTableHeader().setReorderingAllowed(false);
+        tblUsers.getColumnModel().getColumn(0).setMaxWidth(100);
+        tblUsers.getColumnModel().getColumn(0).setMinWidth(50);
     }
 
     public static void getUsers(JTable tblUsers, List<User> users) {
@@ -161,6 +220,8 @@ public class Functions {
 
         tblUsers.setModel(tblUsersModel);
         tblUsers.getTableHeader().setReorderingAllowed(false);
+        tblUsers.getColumnModel().getColumn(0).setMaxWidth(100);
+        tblUsers.getColumnModel().getColumn(0).setMinWidth(50);
     }
 
     public static boolean confirm() {

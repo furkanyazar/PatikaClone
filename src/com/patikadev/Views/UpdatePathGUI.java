@@ -15,7 +15,7 @@ public class UpdatePathGUI extends JFrame {
     private Path path;
     private JTable tblPaths;
 
-    public UpdatePathGUI(Path path, JTable tblPaths) {
+    public UpdatePathGUI(Path path, JTable tblPaths, JComboBox cmbPaths, JTable tblCourses) {
         this.path = path;
         this.tblPaths = tblPaths;
 
@@ -36,6 +36,8 @@ public class UpdatePathGUI extends JFrame {
                 Path.update(path);
 
                 Functions.getPaths(tblPaths);
+                Functions.getPathsForAddCourse(cmbPaths);
+                Functions.getCourses(tblCourses);
                 dispose();
             }
         });

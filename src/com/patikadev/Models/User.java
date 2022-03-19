@@ -59,6 +59,34 @@ public class User {
         return users;
     }
 
+    public static List<User> getAll(String type) {
+        List<User> users = new ArrayList<>();
+        User user;
+
+        try {
+            Statement statement = DbConnector.getInstance().createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE type = '" + type + "'");
+
+            while (resultSet.next()) {
+                user = new User();
+                user.setId(resultSet.getInt("id"));
+                user.setName(resultSet.getString("name"));
+                user.setUsername(resultSet.getString("username"));
+                user.setPassword(resultSet.getString("password"));
+                user.setType(resultSet.getString("type"));
+
+                users.add(user);
+            }
+
+            statement.close();
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return users;
+    }
+
     public static boolean add(User user) {
         User findUser = User.get(-1, user.getUsername());
 
@@ -111,10 +139,36 @@ public class User {
         return user;
     }
 
+    public static User get(int id) {
+        User user = null;
+
+        try {
+            Statement statement = DbConnector.getInstance().createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE id = " + id);
+
+            if (resultSet.next()) {
+                user = new User();
+                user.setId(resultSet.getInt("id"));
+                user.setName(resultSet.getString("name"));
+                user.setUsername(resultSet.getString("username"));
+                user.setPassword(resultSet.getString("password"));
+                user.setType(resultSet.getString("type"));
+            }
+
+            statement.close();
+            resultSet.close();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return user;
+    }
+
     public static boolean delete(int id) {
         try {
             Statement statement = DbConnector.getInstance().createStatement();
             statement.executeUpdate("DELETE FROM users WHERE id = " + id);
+            statement.executeUpdate("DELETE FROM courses WHERE user_id = " + id);
             return true;
         } catch (SQLException e) {
             return false;

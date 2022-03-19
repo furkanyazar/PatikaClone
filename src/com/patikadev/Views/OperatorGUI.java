@@ -2,6 +2,8 @@ package com.patikadev.Views;
 
 import com.patikadev.Helpers.Configs;
 import com.patikadev.Helpers.Functions;
+import com.patikadev.Helpers.Item;
+import com.patikadev.Models.Course;
 import com.patikadev.Models.Operator;
 import com.patikadev.Models.Path;
 import com.patikadev.Models.User;
@@ -9,8 +11,6 @@ import com.patikadev.Models.User;
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
@@ -38,6 +38,14 @@ public class OperatorGUI extends JFrame {
     private JTable tblPaths;
     private JTextField txtPathName;
     private JButton btnAddPath;
+    private JTable tblCourses;
+    private JTextField txtCourseName;
+    private JTextField txtLanguage;
+    private JComboBox cmbPaths;
+    private JComboBox cmbTeachers;
+    private JButton btnAddCourse;
+    private JTextField txtCourseId;
+    private JButton btnDeleteCourse;
     private DefaultComboBoxModel cmbUserTypeModel;
     private DefaultComboBoxModel cmbUserTypeForSearchModel;
     private JPopupMenu pathsMenu;
@@ -55,6 +63,9 @@ public class OperatorGUI extends JFrame {
         setVisible(true);
 
         lblWelcome.setText(Configs.WELCOME_TEXT + this.operator.getName());
+
+        Functions.getPathsForAddCourse(cmbPaths);
+        Functions.getUsersForAddCourse(cmbTeachers);
 
         // ModelUserType
         cmbUserTypeModel = new DefaultComboBoxModel();
@@ -76,6 +87,7 @@ public class OperatorGUI extends JFrame {
 
         Functions.getUsers(tblUsers);
         Functions.getPaths(tblPaths);
+        Functions.getCourses(tblCourses);
 
         pathsMenu = new JPopupMenu();
         JMenuItem updateMenu = new JCheckBoxMenuItem("Düzenle");
@@ -88,7 +100,7 @@ public class OperatorGUI extends JFrame {
             Path path = new Path();
             path.setId(Integer.parseInt(tblPaths.getValueAt(tblPaths.getSelectedRow(), 0).toString()));
             path.setName(tblPaths.getValueAt(tblPaths.getSelectedRow(), 1).toString());
-            UpdatePathGUI updatePathGUI = new UpdatePathGUI(path, tblPaths);
+            UpdatePathGUI updatePathGUI = new UpdatePathGUI(path, tblPaths, cmbPaths, tblCourses);
         });
 
         deleteMenu.addActionListener(e -> {
@@ -101,6 +113,8 @@ public class OperatorGUI extends JFrame {
                     Functions.showMessage("err", "err", JOptionPane.ERROR_MESSAGE);
 
                 Functions.getPaths(tblPaths);
+                Functions.getPathsForAddCourse(cmbPaths);
+                Functions.getCourses(tblCourses);
             }
         });
 
@@ -121,6 +135,14 @@ public class OperatorGUI extends JFrame {
             }
         });
 
+        tblCourses.getSelectionModel().addListSelectionListener(e -> {
+            try {
+                txtCourseId.setText(tblCourses.getValueAt(tblCourses.getSelectedRow(), 0).toString());
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            }
+        });
+
         tblUsers.getModel().addTableModelListener(e -> {
             if (e.getType() == TableModelEvent.UPDATE) {
                 User user = new User();
@@ -133,6 +155,8 @@ public class OperatorGUI extends JFrame {
                 User.update(user);
 
                 Functions.getUsers(tblUsers);
+                Functions.getUsersForAddCourse(cmbTeachers);
+                Functions.getCourses(tblCourses);
             }
         });
 
@@ -155,6 +179,7 @@ public class OperatorGUI extends JFrame {
                 }
 
                 Functions.getUsers(tblUsers);
+                Functions.getUsersForAddCourse(cmbTeachers);
             }
         });
 
@@ -170,6 +195,8 @@ public class OperatorGUI extends JFrame {
                         Functions.showMessage("err", "err", JOptionPane.ERROR_MESSAGE);
 
                     Functions.getUsers(tblUsers);
+                    Functions.getUsersForAddCourse(cmbTeachers);
+                    Functions.getCourses(tblCourses);
                 }
             }
         });
@@ -179,8 +206,8 @@ public class OperatorGUI extends JFrame {
             String username = txtUsernameForSearch.getText();
             String type = cmbUserTypeForSearch.getSelectedItem().toString();
 
-            List<User> users = User.search(User.searchQuery(name, username, type));
-            Functions.getUsers(tblUsers, users);
+            List<User> usersSearch = User.search(User.searchQuery(name, username, type));
+            Functions.getUsers(tblUsers, usersSearch);
         });
 
         btnSignOut.addActionListener(e -> {
@@ -196,11 +223,51 @@ public class OperatorGUI extends JFrame {
                 path = new Path();
                 path.setName(txtPathName.getText());
 
-                if (Path.add(path)) {
+                if (Path.add(path))
                     txtPathName.setText(null);
-                }
 
                 Functions.getPaths(tblPaths);
+                Functions.getPathsForAddCourse(cmbPaths);
+            }
+        });
+
+        btnAddCourse.addActionListener(e -> {
+            Item itemPath = (Item) cmbPaths.getSelectedItem();
+            Item itemUser = (Item) cmbTeachers.getSelectedItem();
+
+            Course course;
+
+            if (Functions.isFieldEmpty(txtCourseName) || Functions.isFieldEmpty(txtLanguage))
+                Functions.showMessage("fill", "err", JOptionPane.ERROR_MESSAGE);
+            else {
+                course = new Course();
+                course.setUserId(itemUser.getKey());
+                course.setPathId(itemPath.getKey());
+                course.setName(txtCourseName.getText());
+                course.setLanguage(txtLanguage.getText());
+
+                if (Course.add(course)) {
+                    txtCourseName.setText(null);
+                    txtLanguage.setText(null);
+                }
+
+                Functions.getCourses(tblCourses);
+            }
+        });
+
+        btnDeleteCourse.addActionListener(e -> {
+            if (Functions.isFieldEmpty(txtCourseId))
+                Functions.showMessage("fill", "err", JOptionPane.ERROR_MESSAGE);
+            else {
+                if (Functions.confirm()) {
+                    if (Course.delete(Integer.parseInt(txtCourseId.getText()))) {
+                        Functions.showMessage("success", "info", JOptionPane.INFORMATION_MESSAGE);
+                        txtCourseId.setText(null);
+                    } else
+                        Functions.showMessage("err", "err", JOptionPane.ERROR_MESSAGE);
+
+                    Functions.getCourses(tblCourses);
+                }
             }
         });
     }
