@@ -6,11 +6,11 @@ import com.patikadev.Models.Operator;
 import com.patikadev.Models.User;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 public class OperatorGUI extends JFrame {
 
@@ -28,8 +28,13 @@ public class OperatorGUI extends JFrame {
     private JButton btnAddUser;
     private JTextField txtUserId;
     private JButton btnDelete;
+    private JTextField txtNameForSearch;
+    private JTextField txtUsernameForSearch;
+    private JComboBox cmbUserTypeForSearch;
+    private JButton btnSearch;
     private DefaultTableModel tblUsersModel;
     private DefaultComboBoxModel cmbUserTypeModel;
+    private DefaultComboBoxModel cmbUserTypeForSearchModel;
 
     private final Operator operator;
 
@@ -37,7 +42,7 @@ public class OperatorGUI extends JFrame {
         this.operator = operator;
 
         add(wrapper);
-        setSize(1000, 500);
+        setSize(800, 600);
         setLocation(Functions.screenCenterLocation("x", getSize()), Functions.screenCenterLocation("y", getSize()));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setTitle(Configs.PROJECT_TITLE);
@@ -54,6 +59,15 @@ public class OperatorGUI extends JFrame {
 
         cmbUserType.setModel(cmbUserTypeModel);
 
+        // ModelUserTypeForSearch
+        cmbUserTypeForSearchModel = new DefaultComboBoxModel();
+        Object[] rowUserTypeForSearch = {"", "operator", "educator", "student"};
+
+        for (Object obj : rowUserTypeForSearch)
+            cmbUserTypeForSearchModel.addElement(obj);
+
+        cmbUserTypeForSearch.setModel(cmbUserTypeForSearchModel);
+
         Functions.getUsers(tblUsers);
 
         tblUsers.getSelectionModel().addListSelectionListener(e -> {
@@ -64,11 +78,28 @@ public class OperatorGUI extends JFrame {
             }
         });
 
+        tblUsers.getModel().addTableModelListener(e -> {
+            if (e.getType() == TableModelEvent.UPDATE) {
+                User user = new User();
+                user.setId(Integer.parseInt(tblUsers.getValueAt(tblUsers.getSelectedRow(), 0).toString()));
+                user.setName(tblUsers.getValueAt(tblUsers.getSelectedRow(), 1).toString());
+                user.setUsername(tblUsers.getValueAt(tblUsers.getSelectedRow(), 2).toString());
+                user.setPassword(tblUsers.getValueAt(tblUsers.getSelectedRow(), 3).toString());
+                user.setType(tblUsers.getValueAt(tblUsers.getSelectedRow(), 4).toString());
+
+                User.update(user);
+
+                Functions.getUsers(tblUsers);
+            }
+        });
+
         btnAddUser.addActionListener(e -> {
+            User user;
+
             if (Functions.isFieldEmpty(txtName) || Functions.isFieldEmpty(txtUsername) || Functions.isFieldEmpty(txtPassword)) {
                 Functions.showMessage("fill", "err", JOptionPane.ERROR_MESSAGE);
             } else {
-                User user = new User();
+                user = new User();
                 user.setName(txtName.getText());
                 user.setUsername(txtUsername.getText());
                 user.setPassword(txtPassword.getText());
@@ -99,6 +130,18 @@ public class OperatorGUI extends JFrame {
                     Functions.getUsers(tblUsers);
                 }
             }
+        });
+        btnSearch.addActionListener(e -> {
+            String name = txtNameForSearch.getText();
+            String username = txtUsernameForSearch.getText();
+            String type = cmbUserTypeForSearch.getSelectedItem().toString();
+
+            List<User> users = User.search(User.searchQuery(name, username, type));
+            Functions.getUsers(tblUsers, users);
+        });
+
+        btnSignOut.addActionListener(e -> {
+            dispose();
         });
     }
 }

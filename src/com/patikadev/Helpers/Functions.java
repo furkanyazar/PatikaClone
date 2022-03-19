@@ -5,6 +5,7 @@ import com.patikadev.Models.User;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class Functions {
 
@@ -88,10 +89,41 @@ public class Functions {
                 return super.isCellEditable(row, column);
             }
         };
+
         Object[] colUsers = {"ID", "İsim", "Kullanıcı adı", "Şifre", "Kullanıcı Tipi"};
         tblUsersModel.setColumnIdentifiers(colUsers);
 
         for (User user : User.getAll()) {
+            Object[] rowUsers = new Object[colUsers.length];
+
+            rowUsers[0] = user.getId();
+            rowUsers[1] = user.getName();
+            rowUsers[2] = user.getUsername();
+            rowUsers[3] = user.getPassword();
+            rowUsers[4] = user.getType();
+
+            tblUsersModel.addRow(rowUsers);
+        }
+
+        tblUsers.setModel(tblUsersModel);
+        tblUsers.getTableHeader().setReorderingAllowed(false);
+    }
+
+    public static void getUsers(JTable tblUsers, List<User> users) {
+        DefaultTableModel tblUsersModel = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                if (column == 0)
+                    return false;
+
+                return super.isCellEditable(row, column);
+            }
+        };
+
+        Object[] colUsers = {"ID", "İsim", "Kullanıcı adı", "Şifre", "Kullanıcı Tipi"};
+        tblUsersModel.setColumnIdentifiers(colUsers);
+
+        for (User user : users) {
             Object[] rowUsers = new Object[colUsers.length];
 
             rowUsers[0] = user.getId();

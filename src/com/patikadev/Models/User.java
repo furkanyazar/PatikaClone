@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class User {
 
@@ -59,7 +60,7 @@ public class User {
     }
 
     public static boolean add(User user) {
-        User findUser = User.get(user.getUsername());
+        User findUser = User.get(-1, user.getUsername());
 
         if (findUser != null) {
             Functions.showMessage("Kullanıcı adı zaten mevcut", "err", JOptionPane.ERROR_MESSAGE);
@@ -85,12 +86,12 @@ public class User {
         }
     }
 
-    public static User get(String username) {
+    public static User get(int id, String username) {
         User user = null;
 
         try {
             Statement statement = DbConnector.getInstance().createStatement();
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE username = '" + username + "';");
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE username = '" + username + "' AND id != " + id);
 
             if (resultSet.next()) {
                 user = new User();
@@ -118,6 +119,79 @@ public class User {
         } catch (SQLException e) {
             return false;
         }
+    }
+
+    public static boolean update(User user) {
+        User findUser = User.get(user.getId(), user.getUsername());
+
+        if (findUser != null) {
+            Functions.showMessage("Kullanıcı adı zaten mevcut", "err", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        try {
+            PreparedStatement statement = DbConnector.getInstance().prepareStatement("UPDATE users SET name = ?, username = ?, password = ?, type = ? WHERE id = ?");
+            statement.setString(1, user.getName());
+            statement.setString(2, user.getUsername());
+            statement.setString(3, user.getPassword());
+            statement.setString(4, user.getType());
+            statement.setInt(5, user.getId());
+
+            statement.executeUpdate();
+            Functions.showMessage("success", "info", JOptionPane.INFORMATION_MESSAGE);
+            statement.close();
+
+            return true;
+        } catch (SQLException e) {
+            Functions.showMessage("err", "err", JOptionPane.ERROR_MESSAGE);
+
+            return false;
+        }
+    }
+
+    public static List<User> search(String query) {
+        List<User> users = new ArrayList<>();
+        User user;
+
+        try {
+            Statement statement = DbConnector.getInstance().createStatement();
+            ResultSet resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                user = new User();
+                user.setId(resultSet.getInt("id"));
+                user.setName(resultSet.getString("name"));
+                user.setUsername(resultSet.getString("username"));
+                user.setPassword(resultSet.getString("password"));
+                user.setType(resultSet.getString("type"));
+
+                users.add(user);
+            }
+
+            statement.close();
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return users;
+    }
+
+    public static String searchQuery(String name, String username, String type) {
+        name = name.toLowerCase();
+        username = username.toLowerCase();
+        type = type.toLowerCase();
+
+        String query = "SELECT * FROM users WHERE LOWER(name) LIKE '%{{name}}%' AND LOWER(username) LIKE '%{{username}}%'";
+        query = query.replace("{{name}}", name);
+        query = query.replace("{{username}}", username);
+
+        if (!type.isEmpty()) {
+            query += " AND LOWER(type) = '{{type}}'";
+            query = query.replace("{{type}}", type);
+        }
+
+        return query;
     }
 
     public int getId() {
